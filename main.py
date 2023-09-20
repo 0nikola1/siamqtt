@@ -82,11 +82,13 @@ config = toml.load(environ.get("CONFIG_FILE", "siamqtt.toml"))
 sia = SIAClient(
     config["sia"]["bind"],
     config["sia"]["port"],
-    [SIAAccount(account) for account in config["sia"]["accounts"]],
+    [SIAAccount(account, key=config["sia"].get("encryption_key", None)) for account in config["sia"]["accounts"]],
     handle_event,
 )
 mqtt = MqttClient()
-mqtt.connect(config["mqtt"]["server"])
+mqtt.username_pw_set(config["mqtt"]["username"], config["mqtt"]["password"])
+mqtt.tls_set(ca_certs=None, cert_reqs=ssl.CERT_REQUIRED, tls_version=ssl.PROTOCOL_TLS)
+mqtt.connect(config["mqtt"]["server"], config["mqtt"]["port"])
 
 if "homeassistant" in config["mqtt"]:
     logger.info("Registering devices with hass...")
